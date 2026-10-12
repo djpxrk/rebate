@@ -4,6 +4,9 @@
 set -e
 cd "$(dirname "$0")/.."
 npm run build
+# Copy the same build into the iOS project, so the app and the site never drift
+# apart: open Xcode afterwards and archive (Settings → About shows the build).
+npx cap copy ios >/dev/null && echo "Copied this build into the iOS app."
 remote="$(git remote get-url origin)"
 name="$(git config user.name)"
 email="$(git config user.email)"

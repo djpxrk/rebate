@@ -122,8 +122,10 @@ What you need:
 - **Xcode** (free, Mac App Store). This Mac only has the Command Line Tools, so install Xcode first, open it once, then run `sudo xcode-select -s /Applications/Xcode.app`.
 - **Apple Developer Program** ($99/year) to use TestFlight and the App Store. A free Apple ID can still run the app on your own iPhone, but it expires after 7 days.
 
+The app runs the very same build as the website: `npm run deploy` publishes the site and copies that build into `ios/` in one go, and Settings → About shows the same build number in both.
+
 Steps:
-1. `npm run ios` (build and copy into `ios/`), then `npx cap open ios`.
+1. `npm run deploy` (or `npm run ios` to only build and copy into `ios/`), then `npx cap open ios`.
 2. In Xcode: App target → Signing & Capabilities → choose your Team. Plug in your iPhone (Settings → Privacy & Security → Developer Mode on) and press Run to test.
 3. In [App Store Connect](https://appstoreconnect.apple.com): New App, bundle ID `com.parkdj.rebate`. "Rebate" alone may be taken on the App Store; something like "Rebate: EXIF Frames" works.
 4. In Xcode: Product → Archive → Distribute App → App Store Connect. The build appears in TestFlight for testing.
