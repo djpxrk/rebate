@@ -14,23 +14,28 @@ const KR_SANS = '"IBM Plex Sans KR"';
 const KR_SERIF = '"Gowun Batang"';
 const KR_MONO = '"Nanum Gothic Coding"';
 const KR_HAND = '"Nanum Pen Script"';
+const KR_DISPLAY = '"Black Han Sans"'; // heavy Hangul for the display faces
 export const FONTS = {
   inter: { group: 'sans', family: 'Inter', label: 'Inter', regular: 400, bold: 700, stack: KR_SANS },
   manrope: { group: 'sans', family: 'Manrope', label: 'Manrope', regular: 400, bold: 700, stack: KR_SANS, lacks: '′″' },
-  unbounded: { group: 'sans', family: 'Unbounded', label: 'Unbounded', regular: 400, bold: 700, stack: `"Manrope", ${KR_SANS}`, scale: 0.92, lacks: 'αΑ′″' },
+  unbounded: { group: 'sans', family: 'Unbounded', label: 'Unbounded', regular: 400, bold: 700, stack: `"Manrope", ${KR_DISPLAY}`, scale: 0.92, lacks: 'αΑ′″' },
   barlow: { group: 'sans', family: 'Barlow Condensed', label: 'Barlow Condensed', regular: 500, bold: 700, stack: `"Inter", ${KR_SANS}`, lacks: 'αΑ' },
   jost: { group: 'sans', family: 'Jost', label: 'Jost', regular: 400, bold: 700, stack: `"Inter", ${KR_SANS}`, lacks: 'αΑ′″' },
   spacegrotesk: { group: 'sans', family: 'Space Grotesk', label: 'Space Grotesk', regular: 400, bold: 700, stack: `"Inter", ${KR_SANS}`, lacks: 'αΑ' },
+  montserrat: { group: 'sans', family: 'Montserrat', label: 'Montserrat', regular: 400, bold: 700, stack: `"Inter", ${KR_SANS}`, lacks: 'αΑ' },
+  poppins: { group: 'sans', family: 'Poppins', label: 'Poppins', regular: 400, bold: 700, stack: `"Inter", ${KR_SANS}`, lacks: 'αΑ′″' },
   oswald: { group: 'sans', family: 'Oswald', label: 'Oswald', regular: 400, bold: 700, stack: `"Inter", ${KR_SANS}`, scale: 0.95, lacks: 'αΑ' },
-  anton: { group: 'display', family: 'Anton', label: 'Anton', regular: 400, bold: 400, stack: `"Inter", ${KR_SANS}`, lacks: 'αΑ' },
-  bebas: { group: 'display', family: 'Bebas Neue', label: 'Bebas Neue', regular: 400, bold: 400, stack: `"Oswald", "Inter", ${KR_SANS}`, scale: 1.1, lacks: 'αΑ′″' },
+  anton: { group: 'display', family: 'Anton', label: 'Anton', regular: 400, bold: 400, stack: `"Inter", ${KR_DISPLAY}`, lacks: 'αΑ' },
+  bebas: { group: 'display', family: 'Bebas Neue', label: 'Bebas Neue', regular: 400, bold: 400, stack: `"Oswald", "Inter", ${KR_DISPLAY}`, scale: 1.1, lacks: 'αΑ′″' },
   abril: { group: 'display', family: 'Abril Fatface', label: 'Abril Fatface', regular: 400, bold: 400, stack: `"Playfair Display", ${KR_SERIF}`, lacks: 'αΑ′″' },
-  righteous: { group: 'display', family: 'Righteous', label: 'Righteous', regular: 400, bold: 400, stack: `"Inter", ${KR_SANS}`, lacks: 'αΑ′″' },
+  righteous: { group: 'display', family: 'Righteous', label: 'Righteous', regular: 400, bold: 400, stack: `"Inter", ${KR_DISPLAY}`, lacks: 'αΑ′″' },
   fraunces: { group: 'serif', family: 'Fraunces', label: 'Fraunces', regular: 400, bold: 600, italic: true, stack: `"EB Garamond", ${KR_SERIF}`, lacks: 'αΑ' },
   garamond: { group: 'serif', family: 'EB Garamond', label: 'EB Garamond', regular: 400, bold: 700, italic: true, stack: KR_SERIF, scale: 1.15 },
   playfair: { group: 'serif', family: 'Playfair Display', label: 'Playfair Display', regular: 400, bold: 700, italic: true, stack: `"EB Garamond", ${KR_SERIF}`, lacks: 'αΑ' },
   cormorant: { group: 'serif', family: 'Cormorant Garamond', label: 'Cormorant Garamond', regular: 500, bold: 700, italic: true, stack: `"EB Garamond", ${KR_SERIF}`, scale: 1.18, lacks: 'αΑ' },
   instrument: { group: 'serif', family: 'Instrument Serif', label: 'Instrument Serif', regular: 400, bold: 400, italic: true, stack: `"EB Garamond", ${KR_SERIF}`, scale: 1.12, lacks: 'αΑ′″' },
+  lora: { group: 'serif', family: 'Lora', label: 'Lora', regular: 400, bold: 700, italic: true, stack: `"EB Garamond", ${KR_SERIF}`, lacks: 'αΑ' },
+  bodoni: { group: 'serif', family: 'Bodoni Moda', label: 'Bodoni Moda', regular: 400, bold: 700, italic: true, stack: `"Noto Serif Display", ${KR_SERIF}`, lacks: 'αΑ′″' },
   didone: { group: 'serif', family: 'Noto Serif Display', label: 'Noto Serif Display', regular: 400, bold: 700, italic: true, stack: KR_SERIF },
   mono: { group: 'mono', family: 'JetBrains Mono', label: 'JetBrains Mono', regular: 400, bold: 600, stack: KR_MONO },
   firacode: { group: 'mono', family: 'Fira Code', label: 'Fira Code', regular: 400, bold: 700, stack: KR_MONO, lacks: '′″' },
@@ -53,6 +58,8 @@ export const FONTS = {
   plexkr: { group: 'korean', family: 'IBM Plex Sans KR', label: 'IBM Plex Sans KR', regular: 400, bold: 700, stack: '"Inter"', sample: '서울 1/250', lacks: 'αΑ' },
   batang: { group: 'korean', family: 'Gowun Batang', label: 'Gowun Batang', regular: 400, bold: 700, stack: '"EB Garamond"', sample: '여름 f/2.8', lacks: 'αΑ' },
   blackhan: { group: 'korean', family: 'Black Han Sans', label: 'Black Han Sans', regular: 400, bold: 400, stack: '"Inter"', sample: '사진 1/250', lacks: 'αΑ·′″©—•' },
+  myeongjo: { group: 'korean', family: 'Nanum Myeongjo', label: 'Nanum Myeongjo', regular: 400, bold: 700, stack: '"EB Garamond"', sample: '나눔 f/2.8', lacks: 'αΑ' },
+  jua: { group: 'korean', family: 'Jua', label: 'Jua', regular: 400, bold: 400, stack: '"Inter"', sample: '주아 1/250', lacks: 'αΑ·′″©×—’•' },
   gaegu: { group: 'korean', family: 'Gaegu', label: 'Gaegu', regular: 400, bold: 700, stack: '"Caveat", "Manrope"', scale: 1.25, sample: '오늘 1/250', lacks: 'αΑ·′″©×—•' },
 };
 export const FONT_GROUPS = { sans: 'Sans', serif: 'Serif', display: 'Display', mono: 'Code & mono', digital: 'Digital', hand: 'Handwriting', korean: '한글' };
