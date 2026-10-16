@@ -417,33 +417,33 @@ function drawStrip({ ctx, font, ink, S, L, t }) {
   const l2 = l1 + small * 1.55;
   const half = (right - left) / 2;
 
-  // Left: camera model and lens on one bold line, the caption beneath
   const model = [t.model || t.make, t.lens].filter(Boolean).join('   ');
   const sub = t.caption;
-  text(ctx, model, left, sub ? l1 : (l1 + l2) / 2 - small * 0.3, { font, size: big, weight: 'bold', color: ink.primary, maxWidth: half * 0.95 });
-  text(ctx, sub, left, model ? l2 : l1, { font, size: small, color: ink.muted, maxWidth: half * 0.95 });
-
   const second = [t.when, t.artist].filter(Boolean).join('   ');
   // The brand is skipped when the model is hidden and the brand alone already shows on the left.
   const brands = t.model ? t.brands : t.brands.filter((b) => b.logo && b.logo !== cameraLogo(t.make));
+  const logos = brands.some((b) => b.logo);
 
-  // With logos: the camera and lens logos on top, the shot details beneath.
-  if (brands.some((b) => b.logo)) {
+  // Left: camera and lens on one bold line (with logos on, the camera and lens
+  // logos sit right above it), the caption beneath.
+  if (logos) {
     stack(ctx, [
       { row: brands, size: S * 0.017, color: ink.primary, rule: ink.rule },
-      t.exposure && { s: t.exposure, size: S * 0.022, weight: 'bold', color: ink.primary },
-      second && { s: second, size: S * 0.016, color: ink.muted },
-    ].filter(Boolean), right, barTop + barH / 2, half * 0.9, font, 'right');
-    return;
+      model && { s: model, size: big, weight: 'bold', color: ink.primary },
+      sub && { s: sub, size: small, color: ink.muted },
+    ].filter(Boolean), left, barTop + barH / 2, half * 0.95, font, 'left');
+  } else {
+    text(ctx, model, left, sub ? l1 : (l1 + l2) / 2 - small * 0.3, { font, size: big, weight: 'bold', color: ink.primary, maxWidth: half * 0.95 });
+    text(ctx, sub, left, model ? l2 : l1, { font, size: small, color: ink.muted, maxWidth: half * 0.95 });
   }
 
-  // Right: exposure over date/time, preceded by the make as a wordmark
+  // Right: exposure over date/time
   const rightTop = second ? l1 : (l1 + l2) / 2 - small * 0.3;
   const w1 = text(ctx, t.exposure, right, rightTop, { font, size: big, weight: 'bold', color: ink.primary, align: 'right', maxWidth: half * 0.72 });
   const w2 = text(ctx, second, right, t.exposure ? l2 : l1, { font, size: small, color: ink.muted, align: 'right', maxWidth: half * 0.72 });
   const blockW = Math.max(w1, w2);
-  // The brand name sits beside the exposure block.
-  if (brands.length) {
+  // With brand names as text, the name sits beside the exposure block.
+  if (brands.length && !logos) {
     const gap = S * 0.018;
     let x = right;
     if (blockW > 0) {
