@@ -575,6 +575,9 @@ function drawLayoutControls() {
   );
 
   const tpl = TEMPLATES[settings.template];
+  // Feed frames are always 4:5 portrait, so orientation and ratio don't apply.
+  $('#orients').closest('fieldset').hidden = !!tpl.feed;
+  $('#ratios').closest('fieldset').hidden = !!tpl.feed;
   $('#map-group').hidden = !tpl.map;
   $('#map-scales').hidden = settings.template !== 'atlas';
   chipGroup($('#map-scales'), Object.entries(MAP_SCALES).map(([k, m]) => [k, m.label]),

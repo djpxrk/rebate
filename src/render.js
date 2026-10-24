@@ -103,6 +103,11 @@ export const TEMPLATES = {
   filmstrip: { label: 'Film strip', font: 'barlow', background: '#17110b' },
   terminal: { label: 'Terminal', font: 'vt323', background: '#040805' },
   greetings: { label: 'Greetings', font: 'pacifico', background: '#efe3c8', map: true, fonts: ['anton', 'courier'] },
+  // Instagram feed posts: always a 4:5 portrait canvas, with every line of text
+  // at a fixed size and place on that canvas, whatever the photo's shape.
+  feed: { label: 'Feed 4:5', font: 'poppins', background: '#ffffff', map: true, feed: true },
+  feeddark: { label: 'Feed 4:5 Dark', font: 'poppins', background: '#111111', map: true, feed: true },
+  feedblur: { label: 'Feed 4:5 Blur', font: 'poppins', background: 'blur', map: true, feed: true },
 };
 
 // Ground distance from the map's centre to its rim.
@@ -219,8 +224,28 @@ export function brandsFor(fields, settings) {
  * Computes canvas size and the photo rectangle at full resolution. Pass the
  * photo's fields so caption areas grow to fit a row of brand logos.
  */
+// Feed frames, in fractions of the canvas width u (canvas height is 1.25u):
+// side margin, band above the photo, band below it.
+const FEED = { side: 0.06, top: 0.11, bottom: 0.2 };
+
 export function layout(W, H, settings, fields) {
   const S = Math.min(W, H);
+  if (TEMPLATES[settings.template]?.feed) {
+    // The photo sits whole and centred in a fixed box; the canvas is sized so
+    // it stays at full resolution.
+    const boxW = 1 - FEED.side * 2;
+    const boxH = 1.25 - FEED.top - FEED.bottom;
+    const u = Math.max(W / boxW, H / boxH);
+    const x = FEED.side * u + (boxW * u - W) / 2;
+    const y = FEED.top * u + (boxH * u - H) / 2;
+    return {
+      S, u,
+      width: Math.round(u),
+      height: Math.round(u * 1.25),
+      photo: { x, y, w: W, h: H },
+      content: { x: 0, y: 0, w: u, h: u * 1.25 },
+    };
+  }
   const b = settings.border;
   const logoRow = fields ? brandsFor(fields, settings).hasLogo : false;
   let pad;
@@ -397,6 +422,9 @@ export function renderFrame(ctx, { img, orientation = 1, blurImg, W, H, fields, 
     filmstrip: drawFilmStrip,
     terminal: drawTerminal,
     greetings: drawGreetings,
+    feed: drawFeed,
+    feeddark: drawFeed,
+    feedblur: drawFeed,
   })[settings.template](draw);
 
   ctx.restore();
@@ -1446,6 +1474,43 @@ function drawGreetings({ ctx, font, S, L, t, fields, scale, small }) {
 
   const credit = [[t.make, t.model].filter(Boolean).join(' '), t.lens, t.exposure].filter(Boolean).join('   ·   ');
   text(ctx, credit, cx, content.y + content.h - Math.max(S * 0.03, photo.x - content.x) * 0.55, { font: FONTS.courier, size: S * 0.017, color: '#6b5a41', align: 'center', maxWidth: content.w * 0.9 });
+}
+
+// ---------- Feed 4:5 (Instagram) ----------
+
+function drawFeed({ ctx, font, ink, L, t, fields, settings, bg, scale }) {
+  const u = L.u;
+  if (bg === 'blur') {
+    // Over the blurred photo: white text with a soft shadow, so it reads on any colours.
+    ink = { primary: '#ffffff', muted: 'rgba(255,255,255,0.88)', rule: 'rgba(255,255,255,0.5)' };
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = u * 0.006 * scale;
+  }
+  const left = FEED.side * u;
+  const right = u - FEED.side * u;
+  const boxTop = FEED.top * u;
+  const boxBottom = u * 1.25 - FEED.bottom * u;
+  const geo = geoFor(fields, L.photo.w < L.photo.h);
+
+  // Above the photo: date and time on the left, location on the right.
+  const place = geo.place?.label || '';
+  const where = [place, settings.show.location && geo.coords ? formatDms(geo.coords) : ''].filter(Boolean).join('   ');
+  const topY = boxTop * 0.62;
+  const wWhen = text(ctx, t.datetime, left, topY, { font, size: u * 0.024, color: ink.muted, maxWidth: u * 0.4 });
+  text(ctx, where, right, topY, { font, size: u * 0.024, color: ink.muted, align: 'right', maxWidth: right - left - wWhen - u * 0.04 });
+
+  // Below: gear on the left (logos over models), exposure and shooter on the right.
+  const y1 = boxBottom + u * 0.075;
+  const y2 = boxBottom + u * 0.125;
+  const models = [t.model || t.make, t.lens].filter(Boolean).join('  ·  ');
+  if (t.brands.length) brandRow(ctx, t.brands, left, y1 - u * 0.009, u * 0.02, { color: ink.primary, rule: ink.rule, font, maxWidth: u * 0.4 });
+  text(ctx, models, left, y2, { font, size: u * 0.026, weight: 'bold', color: ink.primary, maxWidth: u * 0.5 });
+  text(ctx, t.exposure, right, y1, { font, size: u * 0.026, weight: 'bold', color: ink.primary, align: 'right', maxWidth: u * 0.38 });
+  const name = fields.artist && settings.show.artist ? fields.artist : '';
+  const year = parseDateText(fields.date)?.y || new Date().getFullYear();
+  text(ctx, name ? `Shot by ${name}  ·  © ${year}` : '', right, y2, { font, size: u * 0.02, color: ink.muted, align: 'right', maxWidth: u * 0.38 });
+  if (bg === 'blur') ctx.restore();
 }
 
 // ---------- Helpers ----------
