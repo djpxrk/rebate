@@ -226,7 +226,7 @@ export function brandsFor(fields, settings) {
  */
 // Feed frames, in fractions of the canvas width u (canvas height is 1.25u):
 // side margin, band above the photo, band below it.
-const FEED = { side: 0.06, top: 0.11, bottom: 0.2 };
+const FEED = { side: 0.035, top: 0.075, bottom: 0.145 };
 
 export function layout(W, H, settings, fields) {
   const S = Math.min(W, H);
@@ -1501,8 +1501,8 @@ function drawFeed({ ctx, font, ink, L, t, fields, settings, bg, scale }) {
   text(ctx, where, right, topY, { font, size: u * 0.024, color: ink.muted, align: 'right', maxWidth: right - left - wWhen - u * 0.04 });
 
   // Below: gear on the left (logos over models), exposure and shooter on the right.
-  const y1 = boxBottom + u * 0.075;
-  const y2 = boxBottom + u * 0.125;
+  const y1 = boxBottom + u * 0.055;
+  const y2 = boxBottom + u * 0.1;
   const models = [t.model || t.make, t.lens].filter(Boolean).join('  ·  ');
   if (t.brands.length) brandRow(ctx, t.brands, left, y1 - u * 0.009, u * 0.02, { color: ink.primary, rule: ink.rule, font, maxWidth: u * 0.4 });
   text(ctx, models, left, y2, { font, size: u * 0.026, weight: 'bold', color: ink.primary, maxWidth: u * 0.5 });
