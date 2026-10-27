@@ -582,6 +582,11 @@ function drawLayoutControls() {
   $('#ratios').closest('fieldset').hidden = !!(tpl.feed || tpl.fixed);
   $('#map-group').hidden = !tpl.map;
   $('#feed-group').hidden = !tpl.feed;
+  // Shade applies where the design darkens part of the photo or a blurred background.
+  const bgNow = settings.background === 'template' ? tpl.background : settings.background;
+  $('#shade-row').hidden = !(['overlay', 'viewfinder'].includes(settings.template) || bgNow === 'blur');
+  $('#shade').value = settings.shade ?? 1;
+  $('#shade-out').textContent = `${Math.round((settings.shade ?? 1) * 100)}%`;
   $('#text-size').value = settings.textScale || 1;
   $('#text-size-out').textContent = `${Math.round((settings.textScale || 1) * 100)}%`;
   $('#feed-caption').checked = settings.feedCaption !== false;
@@ -647,6 +652,8 @@ for (const [id, i] of [['#custom-w', 0], ['#custom-h', 1]]) {
 }
 $('#text-size').oninput = (e) => { settings.textScale = +e.target.value; $('#text-size-out').textContent = `${Math.round(settings.textScale * 100)}%`; changed({ controls: false }); };
 $('#text-size').onchange = () => changed();
+$('#shade').oninput = (e) => { settings.shade = +e.target.value; $('#shade-out').textContent = `${Math.round(settings.shade * 100)}%`; changed({ controls: false }); };
+$('#shade').onchange = () => changed();
 $('#feed-caption').onchange = (e) => { settings.feedCaption = e.target.checked; changed(); };
 $('#border').oninput = (e) => { settings.border = +e.target.value; $('#border-out').textContent = `${Math.round(settings.border * 100)}%`; changed({ controls: false }); };
 $('#radius').oninput = (e) => { settings.radius = +e.target.value; $('#radius-out').textContent = settings.radius ? `${Math.round(settings.radius * 100)}%` : 'Square'; changed({ controls: false }); };

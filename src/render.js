@@ -149,6 +149,7 @@ export const DEFAULT_SETTINGS = {
   timeFormat: '24',      // Settings: '24' | '12'
   feedCaption: true,     // Feed frames: the caption at the very top
   textScale: 1,          // Layout → Text size (0.7–1.4)
+  shade: 1,              // Layout → Shade (0–1.5) behind overlaid text and on blurred backgrounds
   mapScale: 'region',    // Atlas map zoom, a MAP_SCALES key
   show: {
     make: true, model: true, lens: true, focal: true, aperture: true, shutter: true,
@@ -397,6 +398,7 @@ export function renderFrame(ctx, { img, orientation = 1, blurImg, W, H, fields, 
   ctx.save();
   ctx.setTransform(scale, 0, 0, scale, -offsetX, -offsetY);
   textScale = settings.textScale || 1;
+  shadeScale = settings.shade ?? 1;
   ctx.textBaseline = 'alphabetic';
 
   // Background
@@ -557,7 +559,7 @@ function drawViewfinder({ ctx, font, S, L, t, scale }) {
   const { photo } = L;
   const grad = ctx.createLinearGradient(0, photo.y + photo.h * 0.62, 0, photo.y + photo.h);
   grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.62)');
+  grad.addColorStop(1, `rgba(0,0,0,${shadeAlpha(0.62)})`);
   ctx.fillStyle = grad;
   ctx.fillRect(photo.x, photo.y + photo.h * 0.62, photo.w, photo.h * 0.38);
 
@@ -1424,8 +1426,8 @@ function drawOverlay({ ctx, font, S, L, t, fields, settings, scale }) {
     ctx.fillStyle = g;
     ctx.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0));
   };
-  shade(0, S * (caption ? 0.26 : 0.17) * k, 0.42);
-  shade(H, H - S * 0.27 * k, 0.5);
+  shade(0, S * (caption ? 0.26 : 0.17) * k, shadeAlpha(0.42));
+  shade(H, H - S * 0.27 * k, shadeAlpha(0.5));
 
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.55)';
@@ -1547,6 +1549,10 @@ function brandRow(ctx, items, x, cy, h, { color, rule, align = 'left', font, max
 /** Draws text, shrinking it to fit maxWidth. Returns the drawn width. */
 // Layout → Text size, set for each render (text() and brandRow() apply it).
 let textScale = 1;
+// Layout → Shade: how dark the shading behind overlaid text and over blurred
+// backgrounds is (0 = none, 1 = the design's own, up to 1.5).
+let shadeScale = 1;
+const shadeAlpha = (a) => Math.min(0.95, a * shadeScale);
 
 function text(ctx, s, x, y, { font, size, weight = 'regular', italic = false, color, align = 'left', maxWidth = Infinity }) {
   if (!s) return 0;
@@ -1704,7 +1710,7 @@ function drawBlurBackground(ctx, img, width, height, scale = 1) {
   ctx.save();
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(blurredCopy(img, width, height), 0, 0, width, height);
-  ctx.fillStyle = 'rgba(0,0,0,0.38)';
+  ctx.fillStyle = `rgba(0,0,0,${shadeAlpha(0.38)})`;
   ctx.fillRect(0, 0, width, height);
   const pattern = ctx.createPattern(grain(), 'repeat');
   if (pattern?.setTransform) {
