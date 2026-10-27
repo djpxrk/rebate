@@ -402,3 +402,5 @@ input[type="range"] { width: 100%; accent-color: var(--ink); margin: 0; }
   pointer-events: none; transition: opacity .6s;
 }
 .viewer-hint.gone { opacity: 0; }
+
+.text-size { display: block; margin-top: 14px; }

@@ -149,6 +149,7 @@ export const DEFAULT_SETTINGS = {
   dateFormat: 'ymd.',    // Settings: a DATE_FORMATS key
   timeFormat: '24',      // Settings: '24' | '12'
   feedCaption: true,     // Feed frames: the caption at the very top
+  textScale: 1,          // Layout → Text size (0.7–1.4)
   mapScale: 'region',    // Atlas map zoom, a MAP_SCALES key
   show: {
     make: true, model: true, lens: true, focal: true, aperture: true, shutter: true,
@@ -415,6 +416,7 @@ export function renderFrame(ctx, { img, orientation = 1, blurImg, W, H, fields, 
 
   ctx.save();
   ctx.setTransform(scale, 0, 0, scale, -offsetX, -offsetY);
+  textScale = settings.textScale || 1;
   ctx.textBaseline = 'alphabetic';
 
   // Background
@@ -479,8 +481,8 @@ function drawStrip({ ctx, font, ink, S, L, t }) {
   const right = L.content.x + L.content.w - inset;
   const big = unit * 0.2;
   const small = unit * 0.15;
-  const l1 = barTop + barH / 2 - unit * 0.03;
-  const l2 = l1 + small * 1.55;
+  const l2 = barTop + barH / 2 - unit * 0.03 + small * 1.55 * (1 + textScale) / 2;
+  const l1 = l2 - small * 1.55 * textScale;
   const half = (right - left) / 2;
 
   const model = [t.model || t.make, t.lens].filter(Boolean).join('   ');
@@ -1483,7 +1485,7 @@ function drawGreetings({ ctx, font, S, L, t, fields, scale, small }) {
   const size = Math.min(area * 0.56, maxW / unit);
   const base = top + area * 0.8;
 
-  const script = Math.min(area * 0.19, S * 0.085);
+  const script = Math.min(area * 0.19, S * 0.085) * Math.min(textScale, 1.15);
   ctx.save();
   ctx.translate(cx - Math.min(maxW, unit * size) * 0.28, top + area * 0.2);
   ctx.rotate(-0.07);
@@ -1542,8 +1544,8 @@ function drawFeed({ ctx, font, ink, L, t, fields, settings, bg, scale }) {
   text(ctx, where, right, topY, { font, size: u * 0.024, color: ink.muted, align: 'right', maxWidth: right - left - wWhen - u * 0.04 });
 
   // Below: gear on the left (logos over models), exposure and shooter on the right.
-  const y1 = boxBottom + u * 0.055;
-  const y2 = boxBottom + u * 0.1;
+  const y1 = boxBottom + u * (0.0775 - 0.0225 * textScale);
+  const y2 = boxBottom + u * (0.0775 + 0.0225 * textScale);
   const models = [t.model || t.make, t.lens].filter(Boolean).join('  ·  ');
   if (t.brands.length) brandRow(ctx, t.brands, left, y1 - u * 0.009, u * 0.02, { color: ink.primary, rule: ink.rule, font, maxWidth: u * 0.4 });
   text(ctx, models, left, y2, { font, size: u * 0.026, weight: 'bold', color: ink.primary, maxWidth: u * 0.5 });
@@ -1689,7 +1691,7 @@ function stackCentered(ctx, lines, cx, cy, maxWidth, font) {
 
 /** Draws lines (text or brand rows) as a block vertically centred on cy. */
 function stack(ctx, lines, x, cy, maxWidth, font, align) {
-  const heights = lines.map((l) => (l.row ? l.size * 2.3 : l.size * (l.gap || 1.55)));
+  const heights = lines.map((l) => (l.row ? l.size * 2.3 : l.size * (l.gap || 1.55)) * textScale);
   let y = cy - heights.reduce((a, b) => a + b, 0) / 2;
   lines.forEach((l, i) => {
     if (l.row) brandRow(ctx, l.row, x, y + heights[i] * 0.45, l.size, { color: l.color, rule: l.rule, align, font, maxWidth });
@@ -1736,6 +1738,7 @@ function drawLogo(ctx, key, x, cy, h, color) {
  * exists, separated by a thin rule. h is the cap height. Returns the width used.
  */
 function brandRow(ctx, items, x, cy, h, { color, rule, align = 'left', font, maxWidth = Infinity }) {
+  h *= textScale; // logos grow and shrink with the text
   items = items.map((it) => (it.text ? { text: inFace(font.upper ? it.text.toUpperCase() : it.text, font) } : it));
   const measure = (hh) => {
     const size = hh * 1.38 * (font.k || 1); // cap height ≈ 0.72 of the font size
@@ -1766,12 +1769,15 @@ function brandRow(ctx, items, x, cy, h, { color, rule, align = 'left', font, max
 }
 
 /** Draws text, shrinking it to fit maxWidth. Returns the drawn width. */
+// Layout → Text size, set for each render (text() and brandRow() apply it).
+let textScale = 1;
+
 function text(ctx, s, x, y, { font, size, weight = 'regular', italic = false, color, align = 'left', maxWidth = Infinity }) {
   if (!s) return 0;
   if (font.upper) s = s.toUpperCase();
   s = inFace(s, font);
   const w = weight === 'bold' ? font.bold : font.regular;
-  let px = size * (font.k || 1);
+  let px = size * (font.k || 1) * textScale;
   const spec = (p) => fontSpec(font, w, p, italic);
   ctx.font = spec(px);
   let width = ctx.measureText(s).width;

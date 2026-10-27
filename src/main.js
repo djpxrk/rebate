@@ -580,6 +580,8 @@ function drawLayoutControls() {
   $('#ratios').closest('fieldset').hidden = !!(tpl.feed || tpl.fixed);
   $('#map-group').hidden = !tpl.map;
   $('#feed-group').hidden = !tpl.feed;
+  $('#text-size').value = settings.textScale || 1;
+  $('#text-size-out').textContent = `${Math.round((settings.textScale || 1) * 100)}%`;
   $('#feed-caption').checked = settings.feedCaption !== false;
   $('#map-scales').hidden = settings.template !== 'atlas';
   chipGroup($('#map-scales'), Object.entries(MAP_SCALES).map(([k, m]) => [k, m.label]),
@@ -641,6 +643,8 @@ for (const [id, i] of [['#custom-w', 0], ['#custom-h', 1]]) {
   };
   $(id).onchange = () => changed();
 }
+$('#text-size').oninput = (e) => { settings.textScale = +e.target.value; $('#text-size-out').textContent = `${Math.round(settings.textScale * 100)}%`; changed({ controls: false }); };
+$('#text-size').onchange = () => changed();
 $('#feed-caption').onchange = (e) => { settings.feedCaption = e.target.checked; changed(); };
 $('#border').oninput = (e) => { settings.border = +e.target.value; $('#border-out').textContent = `${Math.round(settings.border * 100)}%`; changed({ controls: false }); };
 $('#radius').oninput = (e) => { settings.radius = +e.target.value; $('#radius-out').textContent = settings.radius ? `${Math.round(settings.radius * 100)}%` : 'Square'; changed({ controls: false }); };
