@@ -95,7 +95,7 @@ import './styles.css';
 import { Capacitor } from '@capacitor/core';
 import { ACCEPT, decodeFile, makePreview } from './decode.js';
 import { equivalentFocal, formatForCrop, lookupCamera } from './crop.js';
-import { cameraLogo, lensLogo } from './brands.js';
+import { cameraLogo, lensBrandLogo } from './brands.js';
 import { LOGOS } from './logos.js';
 import { DATE_FORMATS, formatDate, formatTime, prettyModel } from './exif.js';
 import { DATE_STAMP_FONT, DEFAULT_SETTINGS, FONTS, FONT_GROUPS, MAP_SCALES, inFace, RATIOS, TEMPLATES, layout, ratioLabel, renderFrame } from './render.js';
@@ -113,7 +113,7 @@ const el = (tag, props = {}, ...children) => {
 
 // [key, label, width in twelfths]: related values share a row to keep Details short.
 const FIELD_ROWS = [
-  ['make', 'Brand', 5], ['model', 'Camera', 7], ['lens', 'Lens', 12],
+  ['make', 'Brand', 5], ['model', 'Camera', 7], ['lensBrand', 'Lens brand', 5], ['lens', 'Lens', 7],
   ['focal', 'Focal', 3], ['aperture', 'Aperture', 3], ['shutter', 'Shutter', 3], ['iso', 'ISO', 3],
   ['date', 'Date', 6], ['time', 'Time', 6], ['location', 'Location', 7], ['place', 'Place', 5],
   ['artist', 'Artist', 5], ['caption', 'Caption', 7],
@@ -384,7 +384,7 @@ function samplePhoto() {
   sample = {
     width: 6000, height: 4000, thumb: c,
     fields: {
-      make: 'SONY', model: 'α7 IV', lens: 'FE 35mm F1.4 GM', focal: '35mm', focal35: '35mm', aperture: 'f/1.4', shutter: '1/500s',
+      make: 'SONY', model: 'α7 IV', lensBrand: 'Sony', lens: 'FE 35mm F1.4 GM', focal: '35mm', focal35: '35mm', aperture: 'f/1.4', shutter: '1/500s',
       iso: 'ISO100', date: formatDate(SAMPLE_TAKEN, settings.dateFormat), time: formatTime(SAMPLE_TAKEN, settings.timeFormat),
       location: '33.4581°N 126.9426°E', place: '', heading: '75°', altitude: '',
       artist: '', caption: '', file: 'DSC01234.ARW',
@@ -428,7 +428,7 @@ function drawFields() {
     check.setAttribute('aria-label', `Show ${label.toLowerCase()}`);
     const input = el('input', {
       type: 'text', id, value: photo?.fields[prop] || '', disabled: !photo, autocomplete: 'off',
-      placeholder: key === 'caption' ? 'Add a caption' : key === 'artist' ? 'Your name' : key === 'place' ? placeHint(photo) : photo ? 'Not in EXIF' : '',
+      placeholder: key === 'caption' ? 'Add a caption' : key === 'artist' ? 'Your name' : key === 'place' ? placeHint(photo) : key === 'lensBrand' ? 'e.g. SIGMA' : photo ? 'Not in EXIF' : '',
     });
     if (key === 'place') placeInput = input;
     input.spellcheck = false;
@@ -579,6 +579,8 @@ function drawLayoutControls() {
   $('#orients').closest('fieldset').hidden = !!tpl.feed;
   $('#ratios').closest('fieldset').hidden = !!tpl.feed;
   $('#map-group').hidden = !tpl.map;
+  $('#feed-group').hidden = !tpl.feed;
+  $('#feed-caption').checked = settings.feedCaption !== false;
   $('#map-scales').hidden = settings.template !== 'atlas';
   chipGroup($('#map-scales'), Object.entries(MAP_SCALES).map(([k, m]) => [k, m.label]),
     (v) => (settings.mapScale || 'region') === v, (v) => { settings.mapScale = v; changed(); });
@@ -608,11 +610,12 @@ let fontGroup = null; // the kind of typeface the picker lists; follows the sele
 function logoHint(photo) {
   if (!photo) return 'Logos appear for supported camera and lens brands. A lens logo is added when the lens maker differs from the camera’s.';
   const cam = cameraLogo(photo.fields.make);
-  const lens = lensLogo(photo.fields.lens, photo.fields.lensMake);
+  const lens = lensBrandLogo(photo.fields.lensBrand);
   const name = (k) => LOGOS[k]?.name || k;
   const parts = [];
   parts.push(cam ? `Camera: ${name(cam)} logo.` : photo.fields.make ? `No logo for “${photo.fields.make}”, so its name is shown as text.` : 'No camera brand in this photo.');
-  if (lens && lens !== cam) parts.push(`Lens: ${name(lens)} logo.`);
+  if (lens && lens !== cam) parts.push(`Lens: ${name(lens)} logo (from Lens brand in Details).`);
+  else if (photo.fields.lensBrand && !lens) parts.push(`No logo for “${photo.fields.lensBrand}”, so it's written next to the lens.`);
   return parts.join(' ');
 }
 
@@ -638,6 +641,7 @@ for (const [id, i] of [['#custom-w', 0], ['#custom-h', 1]]) {
   };
   $(id).onchange = () => changed();
 }
+$('#feed-caption').onchange = (e) => { settings.feedCaption = e.target.checked; changed(); };
 $('#border').oninput = (e) => { settings.border = +e.target.value; $('#border-out').textContent = `${Math.round(settings.border * 100)}%`; changed({ controls: false }); };
 $('#radius').oninput = (e) => { settings.radius = +e.target.value; $('#radius-out').textContent = settings.radius ? `${Math.round(settings.radius * 100)}%` : 'Square'; changed({ controls: false }); };
 

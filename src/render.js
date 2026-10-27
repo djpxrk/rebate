@@ -1,6 +1,7 @@
 import { LOGOS } from './logos.js';
 import { parseDateText } from './exif.js';
-import { cameraLogo, lensLogo } from './brands.js';
+import { cameraLogo, lensBrandLogo, lensBrandName } from './brands.js';
+import { normModel } from './crop.js';
 import { compassPoint, coordsOf, fieldOfView, formatDms, headingOf, maps, placeOf } from './map.js';
 
 // Frame renderer. Every measurement is derived from the photo's short edge (S),
@@ -145,10 +146,11 @@ export const DEFAULT_SETTINGS = {
   artist: '',            // Settings: the artist used when a photo has none
   dateFormat: 'ymd.',    // Settings: a DATE_FORMATS key
   timeFormat: '24',      // Settings: '24' | '12'
+  feedCaption: true,     // Feed frames: the caption at the very top
   mapScale: 'region',    // Atlas map zoom, a MAP_SCALES key
   show: {
     make: true, model: true, lens: true, focal: true, aperture: true, shutter: true,
-    iso: true, date: true, time: true, location: false, place: false, artist: false, caption: true,
+    iso: true, date: true, time: true, location: false, place: false, artist: false, caption: true, lensBrand: true,
   },
 };
 
@@ -213,9 +215,20 @@ export function brandsFor(fields, settings) {
   const make = show.make ? fields?.make || '' : '';
   const mode = settings.logo || 'both';
   const camLogo = make && mode !== 'text' ? cameraLogo(make) : null;
-  const lensKey = mode === 'both' && show.lens && fields?.lens ? lensLogo(fields.lens, fields.lensMake) : null;
-  const items = [camLogo ? { logo: camLogo } : make && { text: make }, lensKey && lensKey !== camLogo && { logo: lensKey }].filter(Boolean);
-  return { items, camLogo, hasLogo: items.some((b) => b.logo) };
+  // The lens brand comes from its own Details field (older photos: from the lens name).
+  const brand = show.lensBrand === false ? ''
+    : String(fields?.lensBrand ?? lensBrandName(fields?.lens, fields?.lensMake)).trim();
+  const lensBrand = brand && normModel(brand) !== normModel(fields?.make) ? brand : ''; // a third-party maker
+  let lensItem = null;
+  if (lensBrand && mode === 'both' && camLogo) {
+    const key = lensBrandLogo(lensBrand);
+    lensItem = key && key !== camLogo ? { logo: key } : key ? null : { text: lensBrand };
+  } else if (lensBrand && mode === 'both') {
+    const key = lensBrandLogo(lensBrand);
+    if (key) lensItem = { logo: key };
+  }
+  const items = [camLogo ? { logo: camLogo } : make && { text: make }, lensItem].filter(Boolean);
+  return { items, camLogo, lensBrand, lensInRow: !!lensItem, hasLogo: items.some((b) => b.logo) };
 }
 
 // ---------- Layout ----------
@@ -226,18 +239,20 @@ export function brandsFor(fields, settings) {
  */
 // Feed frames, in fractions of the canvas width u (canvas height is 1.25u):
 // side margin, band above the photo, band below it.
-const FEED = { side: 0.035, top: 0.075, bottom: 0.145 };
+const FEED = { side: 0.035, top: 0.075, bottom: 0.145, caption: 0.06 };
+const feedCaption = (settings, fields) => !!(settings.feedCaption && settings.show.caption && fields?.caption);
 
 export function layout(W, H, settings, fields) {
   const S = Math.min(W, H);
   if (TEMPLATES[settings.template]?.feed) {
     // The photo sits whole and centred in a fixed box; the canvas is sized so
     // it stays at full resolution.
+    const top = FEED.top + (feedCaption(settings, fields) ? FEED.caption : 0);
     const boxW = 1 - FEED.side * 2;
-    const boxH = 1.25 - FEED.top - FEED.bottom;
+    const boxH = 1.25 - top - FEED.bottom;
     const u = Math.max(W / boxW, H / boxH);
     const x = FEED.side * u + (boxW * u - W) / 2;
-    const y = FEED.top * u + (boxH * u - H) / 2;
+    const y = top * u + (boxH * u - H) / 2;
     return {
       S, u,
       width: Math.round(u),
@@ -372,6 +387,9 @@ export function renderFrame(ctx, { img, orientation = 1, blurImg, W, H, fields, 
   t.brands = brands.items;
   t.hasLogo = brands.hasLogo;
   if (brands.camLogo) t.camera = t.model; // the logo already names the brand
+  // Lens text: the model, with its brand in front where the brand isn't shown as a logo.
+  t.lensFull = [brands.lensBrand && !normModel(t.lens).startsWith(normModel(brands.lensBrand)) ? brands.lensBrand : '', t.lens].filter(Boolean).join(' ');
+  if (!(brands.lensInRow && brands.hasLogo)) t.lens = t.lensFull;
   t.gear = [t.camera, t.lens].filter(Boolean).join('   '); // camera and lens on one line
   const { S, photo } = L;
   const radius = settings.radius * S * 0.05;
@@ -949,7 +967,7 @@ function drawPostcard({ ctx, font, ink, S, L, t, fields, settings, bg, small }) 
   const addrX = divider + S * 0.03;
   const addrW = pcx - pr * 1.1 - addrX;
   const addr = [
-    [t.make, t.model].filter(Boolean).join(' '), t.lens, t.exposure,
+    [t.make, t.model].filter(Boolean).join(' '), t.lensFull, t.exposure,
     settings.show.location && geo.coords ? formatDms(geo.coords) : settings.show.place ? geo.place?.label || '' : '',
   ].filter(Boolean);
   const gap = area * 0.2;
@@ -1178,7 +1196,7 @@ function drawCinema({ ctx, font, S, L, t, fields, settings }) {
   // Subtitle (the caption), then a credit line with the camera details.
   if (botH > S * 0.03) {
     const camera = [t.make, t.model].filter(Boolean).join(' ');
-    const credit = [camera && `Shot on ${camera}`, t.lens, t.exposure, t.artist].filter(Boolean).join('   ·   ');
+    const credit = [camera && `Shot on ${camera}`, t.lensFull, t.exposure, t.artist].filter(Boolean).join('   ·   ');
     const sub = t.caption;
     if (sub) {
       ctx.save();
@@ -1251,7 +1269,7 @@ function drawFilmStrip({ ctx, font, S, L, t, fields }) {
   if (edges[1]) {
     const [a, b] = edges[1];
     const y = (a + b) / 2 + size * 0.36;
-    const line = [[t.make, t.model].filter(Boolean).join(' '), t.lens, t.exposure, t.datetime].filter(Boolean).join('   ·   ').toUpperCase();
+    const line = [[t.make, t.model].filter(Boolean).join(' '), t.lensFull, t.exposure, t.datetime].filter(Boolean).join('   ·   ').toUpperCase();
     // Barcode: bars from a hash of the frame's details, then the details, then the frame number.
     let h = 2166136261;
     for (const c of `${line}${n}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
@@ -1472,7 +1490,7 @@ function drawGreetings({ ctx, font, S, L, t, fields, scale, small }) {
   ctx.restore();
   if (small) photoLetters(ctx, word, block, size, cx, base, small, scale);
 
-  const credit = [[t.make, t.model].filter(Boolean).join(' '), t.lens, t.exposure].filter(Boolean).join('   ·   ');
+  const credit = [[t.make, t.model].filter(Boolean).join(' '), t.lensFull, t.exposure].filter(Boolean).join('   ·   ');
   text(ctx, credit, cx, content.y + content.h - Math.max(S * 0.03, photo.x - content.x) * 0.55, { font: FONTS.courier, size: S * 0.017, color: '#6b5a41', align: 'center', maxWidth: content.w * 0.9 });
 }
 
@@ -1489,14 +1507,17 @@ function drawFeed({ ctx, font, ink, L, t, fields, settings, bg, scale }) {
   }
   const left = FEED.side * u;
   const right = u - FEED.side * u;
-  const boxTop = FEED.top * u;
+  const capH = feedCaption(settings, fields) ? FEED.caption * u : 0;
+  const boxTop = FEED.top * u + capH;
   const boxBottom = u * 1.25 - FEED.bottom * u;
+  // Optional caption at the very top, above the date line.
+  if (capH) text(ctx, t.caption, left, capH * 0.92, { font, size: u * 0.034, weight: 'bold', color: ink.primary, maxWidth: right - left });
   const geo = geoFor(fields, L.photo.w < L.photo.h);
 
   // Above the photo: date and time on the left, location on the right.
   const place = geo.place?.label || '';
   const where = [place, settings.show.location && geo.coords ? formatDms(geo.coords) : ''].filter(Boolean).join('   ');
-  const topY = boxTop * 0.62;
+  const topY = capH + FEED.top * u * 0.62;
   const wWhen = text(ctx, t.datetime, left, topY, { font, size: u * 0.024, color: ink.muted, maxWidth: u * 0.4 });
   text(ctx, where, right, topY, { font, size: u * 0.024, color: ink.muted, align: 'right', maxWidth: right - left - wWhen - u * 0.04 });
 

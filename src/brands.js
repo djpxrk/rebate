@@ -78,3 +78,32 @@ export function lensLogo(lensName, lensMake = '') {
   const key = lensBrand(lensName, lensMake);
   return key && LOGOS[key] ? key : null;
 }
+
+/** The lens maker's name for the Lens brand field ("ZEISS", "SIGMA"…), or ''. */
+export function lensBrandName(lensName, lensMake = '') {
+  const key = lensBrand(lensName, lensMake);
+  if (key) return LOGOS[key]?.name || key.toUpperCase();
+  return String(lensMake || '').trim();
+}
+
+/** Logo key for a lens brand as written in Details ("Zeiss", "sigma", "Voigtlander"…), or null. */
+export function lensBrandLogo(brand) {
+  let n = normModel(brand);
+  if (!n) return null;
+  n = { rokinon: 'samyang', carlzeiss: 'zeiss', voigtlaender: 'voigtlander' }[n] || n;
+  const key = Object.keys(LOGOS).find((k) => normModel(k) === n || normModel(LOGOS[k].name) === n)
+    || CAMERA_KEYS[n] || Object.entries(CAMERA_KEYS).find(([k]) => n.startsWith(k))?.[1];
+  return key && LOGOS[key] ? key : null;
+}
+
+/** The lens name without a leading brand ("SIGMA 35mm F1.4 DG DN | Art" → "35mm F1.4 DG DN | Art"). */
+export function stripLensBrand(lens, brand) {
+  const name = String(lens || '').trim();
+  const b = String(brand || '').trim();
+  if (!b) return name;
+  const words = name.split(/\s+/);
+  for (const n of [2, 1]) { // "Carl Zeiss …", "Zeiss …"
+    if (words.length > n && normModel(words.slice(0, n).join('')).endsWith(normModel(b))) return words.slice(n).join(' ');
+  }
+  return name;
+}

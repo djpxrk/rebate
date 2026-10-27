@@ -1,6 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import exifr from 'exifr';
 import { readExif, toFields, toMetadata, orientationOf } from './exif.js';
+import { lensBrandName, stripLensBrand } from './brands.js';
 import { cropFromTags, equivalentFocal } from './crop.js';
 import { isTiff, readIfds, findEmbeddedJpegs } from './tiff.js';
 import { drawOriented } from './render.js';
@@ -53,6 +54,10 @@ export async function decodeFile(file) {
   const orientation = decoded.orientation || 1;
   const { width, height } = uprightSize(decoded.image, orientation);
   const fields = toFields(tags);
+  // Lens brand and model are separate fields: the brand drives the lens logo,
+  // so editing the model text never removes it.
+  fields.lensBrand = lensBrandName(fields.lens, fields.lensMake);
+  fields.lens = stripLensBrand(fields.lens, fields.lensBrand);
   const crop = cropFromTags(tags);
   const focalMm = tags.FocalLength > 0 ? tags.FocalLength : null;
   // The camera's own 35mm value is what it shows in its EXIF and menus; use it
