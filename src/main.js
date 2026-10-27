@@ -130,6 +130,8 @@ const BACKGROUNDS = [
 
 const stored = load('rebate:settings', {});
 const settings = { ...structuredClone(DEFAULT_SETTINGS), ...stored, show: { ...DEFAULT_SETTINGS.show, ...stored.show } };
+// A frame saved earlier that no longer exists falls back to the default.
+if (!TEMPLATES[settings.template]) settings.template = DEFAULT_SETTINGS.template;
 // Ratios saved by earlier versions ('3:2', '16:9') map to their short:long preset.
 if (!RATIOS[settings.ratio]) settings.ratio = { '3:2': '2:3', '16:9': '9:16' }[settings.ratio] || 'auto';
 const exportOpts = { format: 'jpeg', quality: 0.92, size: 'full', keepExif: true, fileName: 'framed', ...load('rebate:export', {}) };

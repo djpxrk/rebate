@@ -103,14 +103,11 @@ export const TEMPLATES = {
   cinema: { label: 'Cinema', font: 'manrope', background: '#000000' },
   filmstrip: { label: 'Film strip', font: 'barlow', background: '#17110b' },
   terminal: { label: 'Terminal', font: 'vt323', background: '#040805' },
-  greetings: { label: 'Greetings', font: 'pacifico', background: '#efe3c8', map: true, fonts: ['anton', 'courier'] },
   // Instagram feed posts: always a 4:5 portrait canvas, with every line of text
   // at a fixed size and place on that canvas, whatever the photo's shape.
   feed: { label: 'Feed 4:5', font: 'poppins', background: '#ffffff', map: true, feed: true },
   feeddark: { label: 'Feed 4:5 Dark', font: 'poppins', background: '#111111', map: true, feed: true },
   feedblur: { label: 'Feed 4:5 Blur', font: 'poppins', background: 'blur', map: true, feed: true },
-  // A Rider-Waite-style tarot card: always a vertical 7:12 card.
-  tarot: { label: 'Tarot', font: 'cormorant', background: '#f3ead2', fixed: true },
 };
 
 // Ground distance from the map's centre to its rim.
@@ -242,28 +239,11 @@ export function brandsFor(fields, settings) {
  */
 // Feed frames, in fractions of the canvas width u (canvas height is 1.25u):
 // side margin, band above the photo, band below it.
-// Tarot card, in fractions of the card width (height is 12/7 of it).
-const TAROT = { ratio: 12 / 7, side: 0.075, top: 0.155, bottom: 0.235 };
 const FEED = { side: 0.035, top: 0.075, bottom: 0.145, caption: 0.06 };
 const feedCaption = (settings, fields) => !!(settings.feedCaption && settings.show.caption && fields?.caption);
 
 export function layout(W, H, settings, fields) {
   const S = Math.min(W, H);
-  if (settings.template === 'tarot') {
-    // The picture window is a fixed portrait shape; the photo sits whole in it
-    // at full resolution, and the card is sized around the window.
-    const winW = 1 - TAROT.side * 2;
-    const winH = TAROT.ratio - TAROT.top - TAROT.bottom;
-    const u = Math.max(W / winW, H / winH);
-    return {
-      S, u,
-      width: Math.round(u),
-      height: Math.round(u * TAROT.ratio),
-      photo: { x: TAROT.side * u + (winW * u - W) / 2, y: TAROT.top * u + (winH * u - H) / 2, w: W, h: H },
-      win: { x: TAROT.side * u, y: TAROT.top * u, w: winW * u, h: winH * u },
-      content: { x: 0, y: 0, w: u, h: u * TAROT.ratio },
-    };
-  }
   if (TEMPLATES[settings.template]?.feed) {
     // The photo sits whole and centred in a fixed box; the canvas is sized so
     // it stays at full resolution.
@@ -352,11 +332,6 @@ export function layout(W, H, settings, fields) {
     case 'terminal': {
       const m = S * 0.045 * b;
       pad = { top: m, left: m, right: m, bottom: m + S * 0.3 };
-      break;
-    }
-    case 'greetings': {
-      const m = S * 0.065 * b;
-      pad = { top: m, left: m, right: m, bottom: m + S * 0.42 };
       break;
     }
     default:
@@ -460,10 +435,8 @@ export function renderFrame(ctx, { img, orientation = 1, blurImg, W, H, fields, 
     cinema: drawCinema,
     filmstrip: drawFilmStrip,
     terminal: drawTerminal,
-    greetings: drawGreetings,
     feed: drawFeed,
     feeddark: drawFeed,
-    tarot: drawTarot,
     feedblur: drawFeed,
   })[settings.template](draw);
 
@@ -1387,135 +1360,6 @@ function drawTerminal({ ctx, font, S, L, t, fields, settings, scale }) {
   ctx.restore();
 }
 
-// ---------- Greetings (large-letter postcard) ----------
-
-/** A rectangle whose edges are scalloped outward, like a deckle-edged print. */
-function scallopedRect(ctx, x, y, w, h, r) {
-  const nx = Math.max(2, Math.round(w / (2 * r)));
-  const ny = Math.max(2, Math.round(h / (2 * r)));
-  const rx = w / nx / 2;
-  const ry = h / ny / 2;
-  ctx.moveTo(x, y);
-  for (let i = 0; i < nx; i++) ctx.arc(x + rx * (2 * i + 1), y, rx, Math.PI, 0);
-  for (let i = 0; i < ny; i++) ctx.arc(x + w, y + ry * (2 * i + 1), ry, -Math.PI / 2, Math.PI / 2);
-  for (let i = 0; i < nx; i++) ctx.arc(x + w - rx * (2 * i + 1), y + h, rx, 0, Math.PI);
-  for (let i = 0; i < ny; i++) ctx.arc(x, y + h - ry * (2 * i + 1), ry, Math.PI / 2, Math.PI * 1.5);
-  ctx.closePath();
-}
-
-// Photo-filled lettering is rendered once per size and reused, since strip
-// exports call the renderer once per tile.
-const letterCache = new WeakMap();
-function photoLetters(ctx, word, fnt, size, x, y, img, scale) {
-  ctx.font = fontSpec(fnt, fnt.regular, size);
-  const m = ctx.measureText(word);
-  const asc = m.actualBoundingBoxAscent;
-  const desc = m.actualBoundingBoxDescent;
-  const bx = x - m.width / 2;
-  const by = y - asc;
-  // Keep the bitmap under ~8 MP; the fill is the photo, so a little softness is fine.
-  const k = Math.min(scale, Math.sqrt(8e6 / Math.max(1, m.width * (asc + desc))));
-  const key = `${word}|${size}|${k}|${fnt.family}`;
-  let hit = letterCache.get(img);
-  if (hit?.key !== key) {
-    const off = document.createElement('canvas');
-    off.width = Math.ceil(m.width * k) + 4;
-    off.height = Math.ceil((asc + desc) * k) + 4;
-    const g = off.getContext('2d');
-    const iw = img.naturalWidth || img.width;
-    const ih = img.naturalHeight || img.height;
-    const cover = Math.max(off.width / iw, off.height / ih);
-    g.imageSmoothingQuality = 'high';
-    g.drawImage(img, (off.width - iw * cover) / 2, (off.height - ih * cover) / 2, iw * cover, ih * cover);
-    const sheen = g.createLinearGradient(0, 0, 0, off.height);
-    sheen.addColorStop(0, 'rgba(255,255,255,0.22)');
-    sheen.addColorStop(0.55, 'rgba(255,255,255,0)');
-    sheen.addColorStop(1, 'rgba(0,0,0,0.18)');
-    g.fillStyle = sheen;
-    g.fillRect(0, 0, off.width, off.height);
-    g.globalCompositeOperation = 'destination-in';
-    g.font = fontSpec(fnt, fnt.regular, size * k);
-    g.textBaseline = 'alphabetic';
-    g.fillStyle = '#000';
-    g.fillText(word, 2, asc * k + 2);
-    hit = { key, canvas: off };
-    letterCache.set(img, hit);
-  }
-  ctx.drawImage(hit.canvas, bx - 2 / k, by - 2 / k, hit.canvas.width / k, hit.canvas.height / k);
-}
-
-function drawGreetings({ ctx, font, S, L, t, fields, scale, small }) {
-  const { photo, content } = L;
-
-  // Linen-finish card: a faint woven texture around the photo.
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(content.x, content.y, content.w, content.h);
-  ctx.rect(photo.x, photo.y, photo.w, photo.h);
-  ctx.clip('evenodd');
-  ctx.fillStyle = 'rgba(120,90,50,0.07)';
-  const weave = S * 0.006;
-  for (let x = content.x; x < content.x + content.w; x += weave) ctx.fillRect(x, content.y, weave * 0.35, content.h);
-  for (let y = content.y; y < content.y + content.h; y += weave) ctx.fillRect(content.x, y, content.w, weave * 0.35);
-
-  // Deckle-edged white border, its shadow kept off the photo.
-  const bw = S * 0.022;
-  ctx.beginPath();
-  scallopedRect(ctx, photo.x - bw, photo.y - bw, photo.w + bw * 2, photo.h + bw * 2, S * 0.011);
-  ctx.shadowColor = 'rgba(70,45,10,0.28)';
-  ctx.shadowBlur = S * 0.014 * scale;
-  ctx.shadowOffsetY = S * 0.004 * scale;
-  ctx.fillStyle = '#fbf8f1';
-  ctx.fill();
-  ctx.restore();
-
-  // "Greetings from" in script over big block letters filled with the photo.
-  const top = photo.y + photo.h + bw;
-  const area = content.y + content.h - top;
-  const cx = content.x + content.w / 2;
-  const geo = geoFor(fields, photo.w < photo.h);
-  const [place] = placeLines(geo.place);
-  const dp = dateParts(fields.date);
-  const block = FONTS.anton;
-  const word = inFace((place || t.caption || (dp ? `${MONTH_NAMES[dp.m]} ${dp.y}` : 'Somewhere')).toUpperCase(), block);
-
-  const maxW = content.w - S * 0.14;
-  ctx.font = fontSpec(block, block.regular, 100);
-  const unit = ctx.measureText(word).width / 100;
-  const size = Math.min(area * 0.56, maxW / unit);
-  const base = top + area * 0.8;
-
-  const script = Math.min(area * 0.19, S * 0.085) * Math.min(textScale, 1.15);
-  ctx.save();
-  ctx.translate(cx - Math.min(maxW, unit * size) * 0.28, top + area * 0.2);
-  ctx.rotate(-0.07);
-  ctx.font = fontSpec(font, font.regular, script * (font.k || 1));
-  ctx.textAlign = 'center';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = script * 0.16;
-  ctx.strokeStyle = '#fbf8f1';
-  ctx.strokeText('Greetings from', 0, 0);
-  ctx.fillStyle = '#b3322b';
-  ctx.fillText('Greetings from', 0, 0);
-  ctx.restore();
-
-  ctx.save();
-  ctx.font = fontSpec(block, block.regular, size);
-  ctx.textAlign = 'center';
-  ctx.lineJoin = 'round';
-  const depth = size * 0.07;
-  ctx.fillStyle = '#1f3a5f';
-  for (let i = 10; i >= 1; i--) ctx.fillText(word, cx + (depth * i) / 10, base + (depth * i) / 10);
-  ctx.lineWidth = size * 0.05;
-  ctx.strokeStyle = '#fbf8f1';
-  ctx.strokeText(word, cx, base);
-  ctx.restore();
-  if (small) photoLetters(ctx, word, block, size, cx, base, small, scale);
-
-  const credit = [[t.make, t.model].filter(Boolean).join(' '), t.lensFull, t.exposure].filter(Boolean).join('   ·   ');
-  text(ctx, credit, cx, content.y + content.h - Math.max(S * 0.03, photo.x - content.x) * 0.55, { font: FONTS.courier, size: S * 0.017, color: '#6b5a41', align: 'center', maxWidth: content.w * 0.9 });
-}
-
 // ---------- Feed 4:5 (Instagram) ----------
 
 function drawFeed({ ctx, font, ink, L, t, fields, settings, bg, scale }) {
@@ -1554,133 +1398,6 @@ function drawFeed({ ctx, font, ink, L, t, fields, settings, bg, scale }) {
   const year = parseDateText(fields.date)?.y || new Date().getFullYear();
   text(ctx, name ? `Shot by ${name}  ·  © ${year}` : '', right, y2, { font, size: u * 0.02, color: ink.muted, align: 'right', maxWidth: u * 0.38 });
   if (bg === 'blur') ctx.restore();
-}
-
-// ---------- Tarot ----------
-
-const ARCANA = ['THE FOOL', 'THE MAGICIAN', 'THE HIGH PRIESTESS', 'THE EMPRESS', 'THE EMPEROR', 'THE HIEROPHANT', 'THE LOVERS',
-  'THE CHARIOT', 'STRENGTH', 'THE HERMIT', 'WHEEL OF FORTUNE', 'JUSTICE', 'THE HANGED MAN', 'DEATH', 'TEMPERANCE', 'THE DEVIL',
-  'THE TOWER', 'THE STAR', 'THE MOON', 'THE SUN', 'JUDGEMENT', 'THE WORLD'];
-const roman = (n) => {
-  if (!n) return '0';
-  let out = '';
-  for (const [v, r] of [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]) while (n >= v) { out += r; n -= v; }
-  return out;
-};
-const TAROT_INK = '#1b1712';
-const TAROT_SKY = ['#f4cf5e', '#f8e7a6'];
-const TAROT_HILLS = ['#8cb36a', '#6e9a52'];
-const TAROT_WATER = '#79acd8';
-
-/** Star with `n` points, centred on (x, y). */
-function star(ctx, x, y, r, n = 8) {
-  ctx.beginPath();
-  for (let i = 0; i < n * 2; i++) {
-    const a = (i * Math.PI) / n - Math.PI / 2;
-    const rr = i % 2 ? r * 0.42 : r;
-    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-  }
-  ctx.closePath();
-}
-
-function drawTarot({ ctx, font, S, L, t, fields }) {
-  const u = L.u;
-  const { photo, win } = L;
-  const line = (w) => { ctx.lineWidth = w * u; ctx.strokeStyle = TAROT_INK; };
-  const H = u * TAROT.ratio;
-
-  // The card: double black border on ivory.
-  roundRect(ctx, u * 0.022, u * 0.022, u * 0.956, H - u * 0.044, u * 0.035);
-  line(0.007); ctx.stroke();
-  roundRect(ctx, u * 0.036, u * 0.036, u * 0.928, H - u * 0.072, u * 0.025);
-  line(0.0022); ctx.stroke();
-
-  // Inside the window but around the photo: a Waite-style sky with a sun and
-  // stars above, hills and water below, in flat colours with black outlines.
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(win.x, win.y, win.w, win.h);
-  ctx.rect(photo.x, photo.y, photo.w, photo.h);
-  ctx.clip('evenodd');
-  const sky = ctx.createLinearGradient(0, win.y, 0, win.y + win.h);
-  sky.addColorStop(0, TAROT_SKY[0]);
-  sky.addColorStop(1, TAROT_SKY[1]);
-  ctx.fillStyle = sky;
-  ctx.fillRect(win.x, win.y, win.w, win.h);
-  const above = photo.y - win.y;
-  const below = win.y + win.h - photo.y - photo.h;
-  const cx = win.x + win.w / 2;
-  if (above > u * 0.04) {
-    // Sun with alternating straight and wavy rays, as on the Sun card.
-    const r = Math.min(above * 0.32, u * 0.11);
-    const sy = win.y + above * 0.55;
-    ctx.fillStyle = '#f39c2c';
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2;
-      const len = r * (i % 2 ? 1.55 : 1.95);
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a - 0.1) * r * 0.95, sy + Math.sin(a - 0.1) * r * 0.95);
-      ctx.lineTo(cx + Math.cos(a) * len, sy + Math.sin(a) * len);
-      ctx.lineTo(cx + Math.cos(a + 0.1) * r * 0.95, sy + Math.sin(a + 0.1) * r * 0.95);
-      ctx.closePath();
-      ctx.fill();
-      line(0.0018); ctx.stroke();
-    }
-    ctx.beginPath(); ctx.arc(cx, sy, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#f7b733'; ctx.fill(); line(0.003); ctx.stroke();
-    // Stars either side.
-    for (const [fx, fy, k] of [[0.12, 0.35, 1], [0.25, 0.7, 0.7], [0.82, 0.3, 0.9], [0.9, 0.72, 0.6], [0.7, 0.62, 0.5]]) {
-      star(ctx, win.x + win.w * fx, win.y + above * fy, Math.min(above * 0.13, u * 0.03) * k);
-      ctx.fillStyle = '#fffbe9'; ctx.fill(); line(0.0016); ctx.stroke();
-    }
-  }
-  if (below > u * 0.04) {
-    // Two rolling hills over a band of water with wave lines.
-    const top = photo.y + photo.h;
-    const water = top + below * 0.62;
-    ctx.fillStyle = TAROT_WATER;
-    ctx.fillRect(win.x, water, win.w, win.y + win.h - water);
-    line(0.0016);
-    for (let i = 0; i < 3; i++) {
-      const y = water + (win.y + win.h - water) * (0.3 + i * 0.25);
-      ctx.beginPath();
-      for (let x = win.x; x <= win.x + win.w; x += u * 0.01) ctx.lineTo(x, y + Math.sin((x - win.x) / (u * 0.025)) * u * 0.004);
-      ctx.stroke();
-    }
-    for (const [x0, x1, peak, c] of [[-0.1, 0.65, 0.18, 0], [0.35, 1.1, 0.3, 1]]) {
-      ctx.beginPath();
-      ctx.moveTo(win.x + win.w * x0, water);
-      ctx.quadraticCurveTo(win.x + win.w * ((x0 + x1) / 2), top + below * peak - below * 0.25, win.x + win.w * x1, water);
-      ctx.closePath();
-      ctx.fillStyle = TAROT_HILLS[c]; ctx.fill(); line(0.0025); ctx.stroke();
-    }
-    line(0.0025);
-    ctx.beginPath(); ctx.moveTo(win.x, water); ctx.lineTo(win.x + win.w, water); ctx.stroke();
-  }
-  ctx.restore();
-  // Black outlines: window and photo.
-  line(0.006); ctx.strokeRect(win.x, win.y, win.w, win.h);
-  line(0.003); ctx.strokeRect(photo.x, photo.y, photo.w, photo.h);
-
-  // Numeral above, title cartouche below. The card is chosen from the photo,
-  // so the same photo always draws the same card; a caption replaces its name.
-  let h = 2166136261;
-  for (const c of `${fields.file || ''}${fields.date || ''}${fields.time || ''}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
-  const n = h % ARCANA.length;
-  const title = (t.caption || ARCANA[n]).toUpperCase();
-  const spaced = (s) => [...s].join(' ');
-  text(ctx, spaced(roman(n)), u / 2, win.y * 0.68, { font, size: u * 0.06, weight: 'bold', color: TAROT_INK, align: 'center' });
-  const by = win.y + win.h + u * 0.03;
-  const bw = u * 0.74;
-  const bh = u * 0.085;
-  ctx.fillStyle = '#fbf6e6';
-  ctx.fillRect(u / 2 - bw / 2, by, bw, bh);
-  line(0.004); ctx.strokeRect(u / 2 - bw / 2, by, bw, bh);
-  text(ctx, spaced(title), u / 2, by + bh * 0.68, { font, size: u * 0.046, weight: 'bold', color: TAROT_INK, align: 'center', maxWidth: bw * 0.92 });
-  const gear = [[t.make, t.model].filter(Boolean).join(' '), t.lensFull].filter(Boolean).join('  ·  '); // no logos on a tarot card
-  const shot = [t.exposure, t.datetime].filter(Boolean).join('  ·  ');
-  text(ctx, gear, u / 2, by + bh + u * 0.045, { font, size: u * 0.026, color: TAROT_INK, align: 'center', maxWidth: u * 0.84 });
-  text(ctx, shot, u / 2, by + bh + u * 0.08, { font, size: u * 0.022, color: '#5b5245', align: 'center', maxWidth: u * 0.84 });
 }
 
 // ---------- Helpers ----------
