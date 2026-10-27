@@ -24,6 +24,7 @@ Strip, Instant, Gallery mat, Backdrop (blurred photo), Viewfinder (overlay), Fil
 - **Cinema:** letterbox bars with a location/date title card, the caption as a subtitle, and a "Shot on" credit.
 - **Film strip:** a strip of 35mm film on a light table: true-to-scale perforations, amber edge printing (frame numbers, stock name, a DX-style barcode) and the camera details along the edge. Runs vertically for portrait photos.
 - **Terminal:** a green phosphor screen: the details printed as a command's output with dotted leaders and a cursor, scanlines and glow.
+- **Overlay:** no border at all. The photo is the whole image, and every line of text sits on it over soft shades at the top and bottom: caption, date and time and location at the top; logos over the camera and lens, and exposure over "Shot by … · ©", at the bottom.
 - **Feed 4:5 / Feed 4:5 Dark / Feed 4:5 Blur:** made for Instagram posts. Always a 4:5 portrait canvas whatever the photo's shape; the photo sits whole in a fixed box, and every line of text has a fixed size and place: date and time and location above, camera and lens logos over the models (left) and exposure over "Shot by … · ©" (right) below.
 
 Options:

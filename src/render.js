@@ -108,6 +108,8 @@ export const TEMPLATES = {
   feed: { label: 'Feed 4:5', font: 'poppins', background: '#ffffff', map: true, feed: true },
   feeddark: { label: 'Feed 4:5 Dark', font: 'poppins', background: '#111111', map: true, feed: true },
   feedblur: { label: 'Feed 4:5 Blur', font: 'poppins', background: 'blur', map: true, feed: true },
+  // No border at all: every line of text sits on the photo itself.
+  overlay: { label: 'Overlay', font: 'poppins', background: '#000000', map: true, fixed: true },
 };
 
 // Ground distance from the map's centre to its rim.
@@ -244,6 +246,9 @@ const feedCaption = (settings, fields) => !!(settings.feedCaption && settings.sh
 
 export function layout(W, H, settings, fields) {
   const S = Math.min(W, H);
+  if (settings.template === 'overlay') {
+    return { S, width: W, height: H, photo: { x: 0, y: 0, w: W, h: H }, content: { x: 0, y: 0, w: W, h: H } };
+  }
   if (TEMPLATES[settings.template]?.feed) {
     // The photo sits whole and centred in a fixed box; the canvas is sized so
     // it stays at full resolution.
@@ -437,6 +442,7 @@ export function renderFrame(ctx, { img, orientation = 1, blurImg, W, H, fields, 
     terminal: drawTerminal,
     feed: drawFeed,
     feeddark: drawFeed,
+    overlay: drawOverlay,
     feedblur: drawFeed,
   })[settings.template](draw);
 
@@ -1398,6 +1404,59 @@ function drawFeed({ ctx, font, ink, L, t, fields, settings, bg, scale }) {
   const year = parseDateText(fields.date)?.y || new Date().getFullYear();
   text(ctx, name ? `Shot by ${name}  ·  © ${year}` : '', right, y2, { font, size: u * 0.02, color: ink.muted, align: 'right', maxWidth: u * 0.38 });
   if (bg === 'blur') ctx.restore();
+}
+
+// ---------- Overlay (no border) ----------
+
+function drawOverlay({ ctx, font, S, L, t, fields, settings, scale }) {
+  const { photo } = L;
+  const W = photo.w;
+  const H = photo.h;
+  const m = S * 0.045;
+  const caption = settings.show.caption && t.caption ? t.caption : '';
+  const k = textScale;
+
+  // Soft shades at the top and bottom keep white text readable on any photo.
+  const shade = (y0, y1, a) => {
+    const g = ctx.createLinearGradient(0, y0, 0, y1);
+    g.addColorStop(0, `rgba(0,0,0,${a})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0));
+  };
+  shade(0, S * (caption ? 0.26 : 0.17) * k, 0.42);
+  shade(H, H - S * 0.27 * k, 0.5);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = S * 0.006 * scale;
+  const white = '#ffffff';
+  const soft = 'rgba(255,255,255,0.86)';
+
+  // Top: caption (when there is one), then date and time on the left, location on the right.
+  let y = m;
+  if (caption) {
+    y += S * 0.04 * k;
+    text(ctx, caption, m, y, { font, size: S * 0.04, weight: 'bold', color: white, maxWidth: W - m * 2 });
+    y += S * 0.014 * k;
+  }
+  y += S * 0.026 * k;
+  const geo = geoFor(fields, W < H);
+  const where = [geo.place?.label || '', settings.show.location && geo.coords ? formatDms(geo.coords) : ''].filter(Boolean).join('   ');
+  const wWhen = text(ctx, t.datetime, m, y, { font, size: S * 0.026, color: soft, maxWidth: W * 0.45 });
+  text(ctx, where, W - m, y, { font, size: S * 0.026, color: soft, align: 'right', maxWidth: W - m * 2 - wWhen - S * 0.04 });
+
+  // Bottom: logos over camera and lens on the left; exposure over the shooter on the right.
+  const y2 = H - m;
+  const y1 = y2 - S * 0.05 * k;
+  const models = [t.model || t.make, t.lens].filter(Boolean).join('  ·  ');
+  if (t.brands.length) brandRow(ctx, t.brands, m, y1 - S * 0.011 * k, S * 0.024, { color: white, rule: 'rgba(255,255,255,0.55)', font, maxWidth: W * 0.45 });
+  text(ctx, models, m, y2, { font, size: S * 0.03, weight: 'bold', color: white, maxWidth: W * 0.5 });
+  text(ctx, t.exposure, W - m, y1, { font, size: S * 0.03, weight: 'bold', color: white, align: 'right', maxWidth: W * 0.42 });
+  const name = fields.artist && settings.show.artist ? fields.artist : '';
+  const year = parseDateText(fields.date)?.y || new Date().getFullYear();
+  text(ctx, name ? `Shot by ${name}  ·  © ${year}` : '', W - m, y2, { font, size: S * 0.024, color: soft, align: 'right', maxWidth: W * 0.42 });
+  ctx.restore();
 }
 
 // ---------- Helpers ----------
