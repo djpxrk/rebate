@@ -576,8 +576,8 @@ function drawLayoutControls() {
 
   const tpl = TEMPLATES[settings.template];
   // Feed frames are always 4:5 portrait, so orientation and ratio don't apply.
-  $('#orients').closest('fieldset').hidden = !!tpl.feed;
-  $('#ratios').closest('fieldset').hidden = !!tpl.feed;
+  $('#orients').closest('fieldset').hidden = !!(tpl.feed || tpl.fixed);
+  $('#ratios').closest('fieldset').hidden = !!(tpl.feed || tpl.fixed);
   $('#map-group').hidden = !tpl.map;
   $('#feed-group').hidden = !tpl.feed;
   $('#feed-caption').checked = settings.feedCaption !== false;

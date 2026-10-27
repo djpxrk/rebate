@@ -25,6 +25,7 @@ Strip, Instant, Gallery mat, Backdrop (blurred photo), Viewfinder (overlay), Fil
 - **Film strip:** a strip of 35mm film on a light table: true-to-scale perforations, amber edge printing (frame numbers, stock name, a DX-style barcode) and the camera details along the edge. Runs vertically for portrait photos.
 - **Terminal:** a green phosphor screen: the details printed as a command's output with dotted leaders and a cursor, scanlines and glow.
 - **Feed 4:5 / Feed 4:5 Dark / Feed 4:5 Blur:** made for Instagram posts. Always a 4:5 portrait canvas whatever the photo's shape; the photo sits whole in a fixed box, and every line of text has a fixed size and place: date and time and location above, camera and lens logos over the models (left) and exposure over "Shot by … · ©" (right) below.
+- **Tarot:** a Rider-Waite-style card, always vertical (7:12). The photo sits whole in the picture window; any space above it becomes a sun-and-stars sky and space below becomes hills and water, drawn in flat Waite colours with black outlines. The roman numeral and card name (one of the 22 Major Arcana, chosen from the photo, or your caption) frame it, with the camera details beneath.
 - **Greetings:** a vintage large-letter postcard: deckle-edged print on a linen card, "Greetings from" in script, and the place name in 3D block letters filled with the photo.
 
 Options:
