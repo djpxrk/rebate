@@ -402,7 +402,7 @@ function drawFields() {
   $('#details-hint').textContent = !photo
     ? 'Add a photo to edit its details.'
     : TEMPLATES[settings.template].map
-      ? `${TEMPLATES[settings.template].label} always shows where the photo was taken${coordsOf(photo.fields) ? '' : ' (type coordinates under Location, e.g. 37.5665, 126.9780)'}; exact coordinates appear only with Location ticked.`
+      ? `${TEMPLATES[settings.template].label} shows where the photo was taken when Location is ticked${coordsOf(photo.fields) ? '' : ' (type coordinates under Location, e.g. 37.5665, 126.9780)'}. Unticked, no location appears at all.`
       : 'Untick a line to leave it out. Edits apply to the selected photo.';
   let focalInput;
   let placeInput;
@@ -422,6 +422,7 @@ function drawFields() {
     drawTemplatesLater();
   };
 
+  $('#toggle-all').textContent = noneShown() ? 'Tick all' : 'Untick all';
   const rows = FIELD_ROWS.map(([key, label, span]) => {
     // The focal length row edits whichever value is shown: actual or 35mm equivalent.
     const prop = key === 'focal' && settings.focal35 && photo?.fields.focal35 ? 'focal35' : key;
@@ -434,7 +435,7 @@ function drawFields() {
     });
     if (key === 'place') placeInput = input;
     input.spellcheck = false;
-    check.onchange = () => { settings.show[key] = check.checked; changed(); };
+    check.onchange = () => { settings.show[key] = check.checked; changed(); $('#toggle-all').textContent = noneShown() ? 'Tick all' : 'Untick all'; };
     input.oninput = () => {
       photo.fields[prop] = input.value;
       photo.edited[key] = true;
@@ -505,6 +506,15 @@ function cropDescription(crop, fields) {
   return `${crop.format || formatForCrop(crop.value)}, ${where}.${eq}`;
 }
 const drawTemplatesLater = () => { if (!$('[data-body="frame"]').hidden) drawTemplates(); };
+
+// Untick every Details line at once (or tick them all back).
+const noneShown = () => FIELD_ROWS.every(([key]) => !settings.show[key]);
+$('#toggle-all').onclick = () => {
+  const on = noneShown();
+  for (const [key] of FIELD_ROWS) settings.show[key] = on;
+  changed();
+  drawFields();
+};
 
 $('#reset-fields').onclick = () => {
   const photo = photos[current];

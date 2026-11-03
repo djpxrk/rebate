@@ -376,6 +376,9 @@ export function layout(W, H, settings, fields) {
  * @param offsetX/Y top-left of this tile in output pixels (strip rendering)
  */
 export function renderFrame(ctx, { img, orientation = 1, blurImg, W, H, fields, settings, scale = 1, offsetX = 0, offsetY = 0 }) {
+  // With Location unticked, nothing about where the photo was taken appears in
+  // any frame: no map, place name, coordinates or heading.
+  if (!settings.show.location) fields = { ...fields, location: '', place: '', heading: '' };
   const L = layout(W, H, settings, fields);
   const tpl = TEMPLATES[settings.template];
   const face = FONTS[settings.font === 'template' ? tpl.font : settings.font] || FONTS[tpl.font];

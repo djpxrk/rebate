@@ -59,6 +59,7 @@
         <p class="hint" id="details-hint">Turn a line off to leave it out of the frame. Edits apply to the selected photo.</p>
         <div class="fields" id="fields"></div>
         <div class="row-actions">
+          <button class="btn btn-ghost" id="toggle-all" type="button">Untick all</button>
           <button class="btn btn-ghost" id="reset-fields" type="button">Reset to EXIF</button>
           <button class="btn btn-ghost" id="copy-fields" type="button">Use artist and caption on all photos</button>
         </div>
@@ -187,7 +188,7 @@
 
       <section class="pref">
         <h3>Location</h3>
-        <label class="toggle"><input type="checkbox" id="pref-show-location" /><span>Show coordinates on frames<small>Off by default, so photos don't reveal exactly where you were.</small></span></label>
+        <label class="toggle"><input type="checkbox" id="pref-show-location" /><span>Show location on frames<small>Maps, place names and coordinates. Off by default, so photos don't reveal where you were.</small></span></label>
         <label class="toggle"><input type="checkbox" id="pref-show-place" /><span>Show place names (town, country) on every frame<small>Map frames always show them.</small></span></label>
         <p class="hint ratio-hint"><span id="map-status"></span> <button class="link" id="map-download" type="button">Download now</button></p>
       </section>
