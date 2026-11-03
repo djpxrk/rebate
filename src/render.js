@@ -91,10 +91,17 @@ export const DATE_STAMP_FONT = { family: 'DSEG7 Classic', regular: 700, bold: 70
 // frame always uses alongside the selectable one.
 export const TEMPLATES = {
   strip: { label: 'Strip', font: 'inter', background: '#ffffff' },
-  polaroid: { label: 'Instant', font: 'fraunces', background: '#f6f5f1' },
-  gallery: { label: 'Gallery mat', font: 'inter', background: '#ffffff' },
+  // Instagram feed posts: always a 4:5 portrait canvas, with every line of text
+  // at a fixed size and place on that canvas, whatever the photo's shape.
+  feed: { label: 'Feed 4:5', font: 'poppins', background: '#ffffff', map: true, feed: true },
+  feeddark: { label: 'Feed 4:5 Dark', font: 'poppins', background: '#111111', map: true, feed: true },
+  feedblur: { label: 'Feed 4:5 Blur', font: 'poppins', background: 'blur', map: true, feed: true },
   backdrop: { label: 'Backdrop', font: 'inter', background: 'blur' },
   viewfinder: { label: 'Viewfinder', font: 'barlow', background: '#000000' },
+  // No border at all: every line of text sits on the photo itself.
+  overlay: { label: 'Overlay', font: 'poppins', background: '#000000', map: true, fixed: true },
+  polaroid: { label: 'Instant', font: 'fraunces', background: '#f6f5f1' },
+  gallery: { label: 'Gallery mat', font: 'inter', background: '#ffffff' },
   film: { label: 'Film rebate', font: 'mono', background: '#000000' },
   lightroom: { label: 'Lightroom', font: 'inter', background: '#262626' },
   atlas: { label: 'Atlas', font: 'manrope', background: '#f5f2eb', map: true },
@@ -103,13 +110,6 @@ export const TEMPLATES = {
   cinema: { label: 'Cinema', font: 'manrope', background: '#000000' },
   filmstrip: { label: 'Film strip', font: 'barlow', background: '#17110b' },
   terminal: { label: 'Terminal', font: 'vt323', background: '#040805' },
-  // Instagram feed posts: always a 4:5 portrait canvas, with every line of text
-  // at a fixed size and place on that canvas, whatever the photo's shape.
-  feed: { label: 'Feed 4:5', font: 'poppins', background: '#ffffff', map: true, feed: true },
-  feeddark: { label: 'Feed 4:5 Dark', font: 'poppins', background: '#111111', map: true, feed: true },
-  feedblur: { label: 'Feed 4:5 Blur', font: 'poppins', background: 'blur', map: true, feed: true },
-  // No border at all: every line of text sits on the photo itself.
-  overlay: { label: 'Overlay', font: 'poppins', background: '#000000', map: true, fixed: true },
 };
 
 // Ground distance from the map's centre to its rim.

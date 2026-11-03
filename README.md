@@ -15,8 +15,14 @@ EXIF comes from `exifr`, with a WebP `EXIF` chunk reader and a raw `Exif\0\0` sc
 
 ## Frames
 
-Strip, Instant, Gallery mat, Backdrop (blurred photo), Viewfinder (overlay), Film rebate, and:
+In the order they appear in the picker:
 
+- **Strip:** a white bar under the photo with the logos, camera and lens, exposure and date.
+- **Feed 4:5 / Feed 4:5 Dark / Feed 4:5 Blur:** made for Instagram posts. Always a 4:5 portrait canvas whatever the photo's shape; the photo sits whole in a fixed box, and every line of text has a fixed size and place: date and time and location above, camera and lens logos over the models (left) and exposure over "Shot by … · ©" (right) below.
+- **Backdrop:** the photo on a blurred copy of itself.
+- **Viewfinder:** the details over a dark gradient at the bottom of the photo.
+- **Overlay:** no border at all. The photo is the whole image, and every line of text sits on it over soft shades at the top and bottom: caption, date and time and location at the top; logos over the camera and lens, and exposure over "Shot by … · ©", at the bottom.
+- **Instant**, **Gallery mat** and **Film rebate**.
 - **Lightroom:** Lightroom-style info panel with the photo's real RGB histogram and the ISO / focal length / aperture / shutter readout.
 - **Atlas:** an offline map in a compass bezel. The pin marks where the photo was taken. When the camera recorded a compass heading, a wedge shows the direction it faced, as wide as the lens's actual angle of view. Shows the town, region and country. Exact coordinates appear only when Location is turned on. Map zoom: City, Region, Country, Continent.
 - **Postcard:** the photo above a postcard back. The caption is handwritten (or "Greetings from …"), and the camera details are typed on the address lines. The stamp shows a globe turned to the location, under a postmark with the town and date.
@@ -24,8 +30,6 @@ Strip, Instant, Gallery mat, Backdrop (blurred photo), Viewfinder (overlay), Fil
 - **Cinema:** letterbox bars with a location/date title card, the caption as a subtitle, and a "Shot on" credit.
 - **Film strip:** a strip of 35mm film on a light table: true-to-scale perforations, amber edge printing (frame numbers, stock name, a DX-style barcode) and the camera details along the edge. Runs vertically for portrait photos.
 - **Terminal:** a green phosphor screen: the details printed as a command's output with dotted leaders and a cursor, scanlines and glow.
-- **Overlay:** no border at all. The photo is the whole image, and every line of text sits on it over soft shades at the top and bottom: caption, date and time and location at the top; logos over the camera and lens, and exposure over "Shot by … · ©", at the bottom.
-- **Feed 4:5 / Feed 4:5 Dark / Feed 4:5 Blur:** made for Instagram posts. Always a 4:5 portrait canvas whatever the photo's shape; the photo sits whole in a fixed box, and every line of text has a fixed size and place: date and time and location above, camera and lens logos over the models (left) and exposure over "Shot by … · ©" (right) below.
 
 Options:
 
